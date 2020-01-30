@@ -4,10 +4,18 @@ import sys
 
 def find_in_tree(pred, subtree):
     result = []
-    if pred(subtree):
-        result = [subtree]
-    for subview in subtree.get("subviews", []):
-        result += find_in_tree(pred, subview)
+    #if pred(subtree):
+    #    result = [subtree] 
+    for subview in subtree.get("subviews", []): 
+        if pred(subview):
+            result += [subview] 
+        if len(subview.get("contentView", [])) > 0 :
+            subview = subview.get("contentView", [])
+        elif len(subview.get("control", [])) > 0 : #not sure this is the right way to handle. but from the data, looks like "control" does not have subviews.
+            subview = subview.get("control", [])
+            if pred(subview):
+                result += [subview] 
+        result += find_in_tree(pred, subview)    
     return result
 
 def class_predicate(name):
@@ -57,18 +65,33 @@ def build_compound_predicate(components):
     return lambda s: all([p(s) for p in predicates])
 
 if __name__ == "__main__":
+    # run like "ui_parse systemviewcontroller.json"
+
     if len(sys.argv) != 2:
-        sys.stderr.write("usage: {} [PATH-TO-JSON]\n".format(sys.argv[0]))
-        sys.exit(1)
-    with open(sys.argv[1]) as f:
-        tree = json.load(f)
+        #sys.stderr.write("Enter json file name (Default=systemviewcontroller.json):\n".format(sys.argv[0]))
+        #sys.stderr.write("usage: {} [PATH-TO-JSON]\n".format(sys.argv[0]))
+        #sys.exit(1)   
+        jsonfile = "systemviewcontroller.json" #hardcode the file name. just copy the file to the same folder as this
+        try:               
+            with open(jsonfile) as f:
+                tree = json.load(f)                   
+        except :
+            sys.stderr.write("File read error or file does not exist (default: systemviewcontroller.json) ")
+            exit(1)
+     
     while True:
+        sys.stderr.write("\nEnter selector (class, .classname,#identifier): ")   #waiting for selector.  
         sel = parse_selector(input())
         candidates = [tree]
         while len(sel) > 0:
             pred = build_compound_predicate(sel.pop(0))
+#            print(pred)
             tmp = candidates
             candidates = []
-            for candidate in tmp:
+            for candidate in tmp:                
+            
                 candidates += find_in_tree(pred, candidate)
         print(json.dumps(candidates))
+        print("total records found: " + str(len(candidates)))   
+         
+         
