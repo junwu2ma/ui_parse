@@ -9,10 +9,11 @@ def find_in_tree(pred, subtree):
     for subview in subtree.get("subviews", []): 
         if pred(subview):
             result += [subview] 
-        if len(subview.get("contentView", [])) > 0 :
-            subview = subview.get("contentView", [])
-        elif len(subview.get("control", [])) > 0 : #not sure this is the right way to handle. but from the data, looks like "control" does not have subviews.
-            subview = subview.get("control", [])
+#        if len(subview.get("contentView", [])) > 0 :
+        if "contentView" in subview:
+            subview = subview.get("contentView")
+        elif "control" in subview: 
+            subview = subview.get("control")
             if pred(subview):
                 result += [subview] 
         result += find_in_tree(pred, subview)    
